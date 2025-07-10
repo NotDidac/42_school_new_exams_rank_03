@@ -4,8 +4,8 @@
 #include <stdlib.h>  // For malloc, free
 
 // Define the maximum buffer size. We add +1 for the null terminator,
-// ensuring we can store up to 1,000,000 bytes of actual content safely.
-#define MAX_INPUT_BUFFER_SIZE (1000000 + 1)
+// ensuring we can store up to 10k bytes of actual content safely.
+#define MAX_INPUT_BUFFER_SIZE (10000 + 1)
 
 // Custom ft_strncmp function:
 // Compares the first 'n' characters of two strings.
