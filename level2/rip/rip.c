@@ -38,8 +38,8 @@ void solve(int current_index, int total_to_remove, int num_removed, char *s)
 		return ;
 	}
 	 // Early termination: if we've already removed too many
-    if (num_removed > total_to_remove)
-        return ;
+	if (num_removed > total_to_remove)
+		return ;
 	if (s[current_index] == '(' || s[current_index] == ')')
 	{
 		// option 1: remove it
