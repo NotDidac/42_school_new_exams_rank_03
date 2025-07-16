@@ -4,8 +4,8 @@
 #include <stdlib.h>
 
 /* basic logic of the program: 
-- use factorial function to calculate how many permutations there are for a given number of unique characters
-(i.e. the size of the given string)
+- use factorial function to calculate how many permutations there are 
+for a given number of unique characters (i.e. the size of the given string)
 - use malloc to create a matrix (char **all_perms) to hold all permutations.
 - the number of rows in the matrix equals the total number of permutations possible,
 and the number of columns in each row equals the size of the original string given, plus nul-terminator.
