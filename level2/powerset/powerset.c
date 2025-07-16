@@ -79,7 +79,8 @@ int main(int ac, char **av)
 		nums[i] = atoi(av[i + 2]); // starting from the third argv
 	// initialise subset size to 0
 	int subsize = 0;
-	solve(0, 0, subset);
+	int current_index = 0;
+	solve(subsize, current_index, subset);
 	free(nums);
 	free(subset);
 }
