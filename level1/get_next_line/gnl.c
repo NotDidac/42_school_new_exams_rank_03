@@ -1,11 +1,14 @@
-/* This is a standard get_next_line solution using malloc. To be compiled in combination with gnl.h */
+/* This is a standard get_next_line solution using malloc. To be compiled in combination with gnl.h
+Use this solution with caution!!! as memory management can be tricky */
 
 #include "gnl.h"
 
+// IMPORTANT: as the static stash is initialised to NULL, helper functions must 
+// be able to handle a NULL pointer gracefully
 int ft_strlen(char *s)
 {
 	int i = 0;
-	if (!s)
+	if (!s) // important check
 		return 0;
 	while (s[i])
 		i++;
@@ -16,7 +19,7 @@ int ft_strlen(char *s)
 int ft_strchr(char *s, char c)
 {
 	int i = 0;
-	if (!s)
+	if (!s) // important check
 		return 0;
 	while (s[i])
 	{
@@ -35,16 +38,16 @@ char *ft_strjoin(char *s1, char *s2)
 	int len1 = 0;
 	int len2 = 0;
 	int total_len;
-	if (s1)
+	if (s1) // important check
 		len1 = ft_strlen(s1);
-	if (s2)
+	if (s2) // important check
 		len2 = ft_strlen(s2);
 	total_len = len1 + len2;
 	char *dest = malloc(sizeof(char) * (total_len + 1));
 	if (!dest)
 	{
-		free(s1);  // if malloc fails, need to free s1
-		s1 = NULL;
+		free(s1);  // important! if malloc fails, need to free s1
+		s1 = NULL; // safeguarding measure to avoid double free issues
 		return NULL;
 	}
 	int i;
@@ -53,7 +56,7 @@ char *ft_strjoin(char *s1, char *s2)
 	for (i = 0; i < len2; i++)
 		dest[len1 + i] = s2[i];
 	dest[total_len] = '\0';
-	free(s1);
+	free(s1); // free original s1 before returning the combined string 
 	s1 = NULL;
 	return dest;
 }
@@ -73,17 +76,17 @@ char    *get_next_line(int fd)
 	while (!ft_strchr(stash, '\n'))
 	{
 		int bytes_read = read(fd, read_buffer, BUFFER_SIZE);
-		if (bytes_read < 0)
+		if (bytes_read < 0) // read error
 		{
 			free(stash);
 			stash = NULL;
 			return NULL;
 		}
-		if (bytes_read == 0) // nothing is read = EOF, stop reading
+		if (bytes_read == 0) // nothing is read, meaning EOF, stop reading
 			break ;
 		read_buffer[bytes_read] = '\0';
 		stash = ft_strjoin(stash, read_buffer); 
-		if (!stash) // malloc failed in strjoin
+		if (!stash) // malloc failed in strjoin, stash has already been freed there 
 			return NULL;
 	}
 	if (!stash || *stash == '\0') // empty stash after read loop
@@ -99,6 +102,7 @@ char    *get_next_line(int fd)
 		i++;
 	// if it's '\n' that terminated the loop
 	// we need to include it in the line to be extracted
+	// hence increment the line length further 
 	if (stash[i] == '\n') 
 		i++;
 	int line_length = i;
@@ -130,7 +134,7 @@ char    *get_next_line(int fd)
 	{
 		free(stash);
 		stash = NULL;
-		free(line);
+		free(line); // important! need to free previously allocated line 
 		line = NULL;
 		return NULL;
 	}
