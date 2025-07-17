@@ -5,7 +5,23 @@
 #include <string.h>
 #include <stdbool.h>
 #include <sys/types.h>
-#include <float.h>
+#include <float.h> // add this library for FLT_MAX
+// Remember to compile with the -lm flag!
+
+/* This approach to solving the Traveling Salesman Problem 
+leverages a brute-force permutation generation strategy,
+which works quite well with a small size (N <= 11).
+The recursive backtracking function used here (generate_perms()) is structured similarly 
+to the one used in my solution to another Rank 03 exam question "permutations" 
+(also in my repo). I would recommend studying them side by side.
+
+You first initialize an array with city indices (0 to N-1). 
+Then, you use a recursive backtracking function (Heap's algorithm variant) 
+to systematically generate every possible ordering (permutation) of these city indices. 
+For each complete permutation, you calculate the total tour length 
+by summing the distances between consecutive cities and 
+adding the distance from the last city back to the first, 
+updating a best_distance variable if a shorter path is found.*/
 
 // compute the distance between two points
 float    distance(float a[2], float b[2])
@@ -13,78 +29,75 @@ float    distance(float a[2], float b[2])
     return sqrtf((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]));
 }
 
+
 /* YOUR FUNCTIONS START HERE */
-/*Helper function to generate permutations of cities and 
-calculate the total path length for each.
-It uses a recursive backtracking approach.
-cities: The array of all city coordinates.
-num_cities: The total number of cities to visit.
-current_path: An array storing the indices of cities 
-	in the current permutation being built.
-visited: A boolean array to keep track of which cities 
-	have already been included in current_path for the current permutation.
-current_dist_sum: The accumulated distance of the path segments formed so far 
-	in the current permutation.
-level: The current depth of recursion, indicating which position 
-	in current_path we are currently trying to fill.
-best_distance_ptr: A pointer to a float variable that stores 
-	the minimum distance found across all permutations.
-start_node_index: The index of the city that is fixed as the starting point 
-	of the path to avoid redundant calculations
-    (since the total length of a cycle is independent of its starting point).*/
-void permute(float (*cities)[2], ssize_t num_cities, int *current_path, bool *visited,
-             float current_dist_sum, int level, float *best_distance_ptr, int start_node_index)
+
+
+// Calculates the total distance of a given path (permutation of city indices).
+// array: The main array of city coordinates.
+// perm: An array representing the order of city indices for the current path.
+// size: The total number of cities.
+// Returns the total distance as a float.
+float calc_total_distance(float (*array)[2], int *perm, int size)
 {
-    // Base case: If all cities have been placed in the current_path permutation.
-    if (level == num_cities)
-    {
-        // The path is now complete. To close the loop, add the distance from the last city
-        // in the permutation back to the fixed starting city.
-        current_dist_sum += distance(cities[current_path[num_cities - 1]], cities[start_node_index]);
+	int city_index_current;
+	int city_index_next;
+	int i;
+	float actual_distance = 0.0f;
+	// Sum distances between consecutive cities in the permutation.
+	for (i = 0; i < size - 1; i++)
+	{
+		city_index_current = perm[i];
+		city_index_next = perm[i + 1];
+		actual_distance += distance(array[city_index_current], array[city_index_next]);
+	}
+	// Add distance from the last city back to the first city to close the loop.
+	city_index_current = perm[i]; // i is now (size - 1) from the loop
+	city_index_next = perm[0]; // First city in the permutation
+	actual_distance += distance(array[city_index_current], array[city_index_next]);
+	return (actual_distance);
+}	
 
-        // If the total distance of this path is less than the best distance found so far, update best_distance_ptr.
-        if (current_dist_sum < *best_distance_ptr)
-        {
-            *best_distance_ptr = current_dist_sum;
-        }
-        return; // Backtrack
-    }
-
-    // Recursive step: Iterate through all cities to find the next one to add to the path.
-    for (int i = 0; i < num_cities; i++)
-    {
-        // If city 'i' has not been visited in the current permutation.
-        if (!visited[i])
-        {
-            // Mark city 'i' as visited for this branch of the recursion.
-            visited[i] = true;
-            // Place city 'i' at the current level in the current_path.
-            current_path[level] = i;
-
-            // Calculate the distance added by moving to this new city.
-            float distance_to_add = 0.0f;
-            // If this is not the very first city being placed (i.e., not the one fixed at level 0),
-            // calculate the distance from the previous city in the path to the current one.
-            if (level > 0)
-            {
-                distance_to_add = distance(cities[current_path[level - 1]], cities[current_path[level]]);
-            }
-            // Note: If level is 0, distance_to_add remains 0.0f. The distance from the fixed start_node_index
-            // to current_path[0] (which is the first city chosen in the permutation) will be implicitly
-            // handled when level becomes 1, as current_path[0] will be the "previous" city.
-
-            // Recursively call permute to fill the next level of the path.
-            permute(cities, num_cities, current_path, visited,
-                    current_dist_sum + distance_to_add, level + 1, best_distance_ptr, start_node_index);
-
-            // Backtrack: Mark city 'i' as unvisited so it can be used in other permutations.
-            visited[i] = false;
-        }
-    }
+// Main function: uses standard backtracking method to generate permutations
+// Generates all permutations of 'mutable_array' and calculates their path lengths.
+// array: The main array of city coordinates.
+// mutable_array: The array whose elements are being permuted (its content changes during recursion).
+// size: The number of elements in the array/permutation.
+// mutable_index_current: The starting index for the current permutation generation step (current depth).
+// best_distance: A pointer to a float variable that stores the minimum distance found so far.
+void generate_perms(float (*array)[2], int *mutable_array, int size,
+					int mutable_index_current, float *best_distance)
+{
+	// Base case: If mutable_index_current reaches size, 
+	// a complete permutation has been formed.
+	if (mutable_index_current == size)
+	{
+		float actual_distance = calc_total_distance(array, mutable_array, size);
+		if (actual_distance < *best_distance)
+			*best_distance = actual_distance;
+		return ;
+	}
+	// Recursive step: Iterate from mutable_index_current to size-1 
+	// to choose the element for current_index.
+	for (int i = mutable_index_current; i < size; i++)
+	{
+		// Swap elements to create a new arrangement for the current level.
+		int temp = mutable_array[mutable_index_current];
+		mutable_array[mutable_index_current] = mutable_array[i];
+		mutable_array[i] = temp;
+		// Recurse to generate permutations for the rest of the array (next level)
+		generate_perms(array, mutable_array, size, mutable_index_current + 1,
+						best_distance);
+		// Backtrack: Swap back to restore the array to its state before the recursive call,
+        // allowing other permutations to be generated correctly for the current level.
+		temp = mutable_array[mutable_index_current];
+		mutable_array[mutable_index_current] = mutable_array[i];
+		mutable_array[i] = temp;
+	}
 }
 
 // Main function to solve the Traveling Salesman Problem.
-// (the skeleton has been provided, you need to fill in the blanks.)
+// (the skeleton function has been provided, you need to fill in the blanks.)
 // array: A pointer to an array of city coordinates ([x, y] pairs).
 // size: The number of cities in the array.
 // Returns the length of the shortest possible closed path visiting all cities.
@@ -95,43 +108,30 @@ float tsp(float (*array)[2], ssize_t size)
 	
 	// ... YOUR CODE STARTS HERE 
 
+
+	best_distance = FLT_MAX; // initialise best distance to a very large number 
 	
-	best_distance = FLT_MAX;
 	 // Handle edge cases for 0 or 1 city: the path length is 0.
     if (size <= 1) {
         return 0.0f;
     }
+	// Create an integer array ranging from 0 to size - 1.
+    // This array will hold the indices of cities and will be permuted.
+	int *mutable_array = malloc(sizeof(int) * size);
+	if (!mutable_array)
+		return FLT_MAX; // return a very large number to signify error
+	
+	for (int i = 0; i < size; i++)
+		mutable_array[i] = i;
 
-    // Allocate memory for the current_path (stores city indices in a permutation)
-    // and visited (tracks visited cities) arrays.
-    int *current_path = (int *)calloc(size, sizeof(int));
-    bool *visited = (bool *)calloc(size, sizeof(bool));
+	// Generate permutations and find the best distance.
+    // Optimization: Start generating permutations from index 1 (mutable_index_current = 1)
+    // while implicitly fixing the city at index 0 in mutable_array[0].
+    // This reduces the number of permutations from N! to (N-1)! for a closed loop.
+	int mutable_index_start = 1;
+	generate_perms(array, mutable_array, size, mutable_index_start, &best_distance);
+	free(mutable_array);
 
-    // Check if memory allocation was successful.
-    if (!current_path || !visited) {
-        fprintf(stderr, "Error: Memory allocation failed in tsp.\n");
-        // Free any successfully allocated memory before returning.
-        free(current_path);
-        free(visited);
-        return FLT_MAX; // Return a large value to indicate an error.
-    }
-
-    // Fix the first city (city at index 0) as the starting point.
-    // This reduces the number of permutations to (N-1)! instead of N!,
-    // as the total path length of a cycle is independent of its starting point.
-    int start_node_index = 0;
-    current_path[0] = start_node_index;
-    visited[start_node_index] = true;
-
-    // Start the permutation generation from the second city (level 1).
-    // The initial current_dist_sum is 0.0f, as the first segment's distance
-    // (from the fixed start node to the first chosen city in the permutation)
-    // will be added in the first recursive call of permute.
-    permute(array, size, current_path, visited, 0.0f, 1, &best_distance, start_node_index);
-
-    // Free the dynamically allocated memory.
-    free(current_path);
-    free(visited);
 
 	// ... YOUR CODE ENDS 
 
@@ -141,6 +141,7 @@ float tsp(float (*array)[2], ssize_t size)
 
 
 /* YOUR FUNCTIONS END HERE */
+
 
 // Function to determine the number of lines (cities) in a file.
 // file: A pointer to the FILE stream.
@@ -163,6 +164,9 @@ ssize_t    file_size(FILE *file)
 
 // Function to read city coordinates from a file into an array.
 // array: A pointer to an array of float[2] where coordinates will be stored.
+// 		It is a 2D array where each "row" has exactly 2 columns 
+// 		(e.g., float coordinates[N][2]). 
+// 		Each float[2] represents a single city's [x, y] coordinates.
 // file: A pointer to the FILE stream to read from.
 // Returns 0 on success, -1 on error.
 int        retrieve_file(float (*array)[2], FILE *file)
@@ -230,6 +234,5 @@ int        main(int ac, char **av)
     free(array);
     return (0);
 }
-
 
 
