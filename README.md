@@ -7,3 +7,4 @@
 * Good luck with your exam!
 ## Update
 * July 17: 1) level 2 solutions are complete, still some minor clean-ups to do; 2) added standard get_next_line solution that uses dynamically allocated memory for the line;
+* July 18: 1) added a thoroughly annotated solution to ft_scanf;
